@@ -202,8 +202,12 @@ readpw(Display *dpy, struct xrandr *rr, struct lock **locks, int nscreens,
                                                 XSetWindowBackgroundPixmap(dpy, locks[screen]->win, locks[screen]->bgmap);
                                         else
                                                 XSetWindowBackground(dpy, locks[screen]->win, locks[screen]->colors[0]);
-					XClearWindow(dpy, locks[screen]->win);
+					XSetWindowBorder(dpy,
+					                     locks[screen]->win,
+					                     locks[screen]->colors[color]);
+					// XClearWindow(dpy, locks[screen]->win);
 				}
+				XSync(dpy, False);
 				oldc = color;
 			}
 		} else if (rr->active && ev.type == rr->evbase + RRScreenChangeNotify) {
@@ -264,13 +268,14 @@ lockscreen(Display *dpy, struct xrandr *rr, int screen)
 	/* init */
 	wa.override_redirect = 1;
 	wa.background_pixel = lock->colors[INIT];
+	wa.border_pixel = lock->colors[INIT];
 	lock->win = XCreateWindow(dpy, lock->root, 0, 0,
-	                          DisplayWidth(dpy, lock->screen),
-	                          DisplayHeight(dpy, lock->screen),
-	                          0, DefaultDepth(dpy, lock->screen),
+	                          DisplayWidth(dpy, lock->screen) - 2 * BORDER_WIDTH,
+	                          DisplayHeight(dpy, lock->screen) - 2 * BORDER_WIDTH,
+	                          BORDER_WIDTH, DefaultDepth(dpy, lock->screen),
 	                          CopyFromParent,
 	                          DefaultVisual(dpy, lock->screen),
-	                          CWOverrideRedirect | CWBackPixel, &wa);
+                              CWOverrideRedirect | CWBackPixel | CWBorderPixel, &wa);
         if(lock->bgmap)
           XSetWindowBackgroundPixmap(dpy, lock->win, lock->bgmap);
 	lock->pmap = XCreateBitmapFromData(dpy, lock->win, curs, 8, 8);
